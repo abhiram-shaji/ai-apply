@@ -19,7 +19,7 @@ async function getAnswer(question) {
   const finalPrompt = rawPrompt.replace('{QUESTION}', question);
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4',
+    model: 'gpt-4.1-nano',
     messages: [{ role: 'user', content: finalPrompt }],
     max_tokens: 90,
   });
