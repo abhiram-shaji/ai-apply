@@ -1,0 +1,26 @@
+{
+  "name": "ai-apply",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhiram-shaji/ai-apply.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abhiram-shaji/ai-apply/issues"
+  },
+  "homepage": "https://github.com/abhiram-shaji/ai-apply#readme",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "openai": "^5.5.1",
+    "playwright": "^1.53.1"
+  }
+}
