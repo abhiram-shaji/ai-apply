@@ -1,7 +1,14 @@
 async function getLabelFromInput(input) {
   return await input.evaluate(el => {
+    // 1. Directly associated label via id/for
+    if (el.id) {
+      const byFor = document.querySelector(`label[for="${el.id}"]`);
+      if (byFor) return byFor.innerText.trim();
+    }
+
     const labelEl = el.closest('div')?.querySelector('label');
     if (labelEl) return labelEl.innerText.trim();
+
     const ariaLabel = el.getAttribute('aria-label');
     if (ariaLabel) return ariaLabel.trim();
     const ariaLabelledBy = el.getAttribute('aria-labelledby');
