@@ -140,9 +140,14 @@ async function handleRadio(radio, page) {
   console.log(`🧠 AI answer: "${answer}"`);
 
   const name = await radio.getAttribute('name');
-  if (!name) return;
+  if (!name) {
+    console.warn(`⚠️ No radio group found for: "${label}"`);
+    return;
+  }
 
-  const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
+  const pageForRadio = await radio.page();
+  await pageForRadio.waitForTimeout(500);
+  const radiosInGroup = await pageForRadio.$$(`input[type="radio"][name="${name}"]`);
 
   const normalizedAnswer = answer.trim().toLowerCase();
   const numericAnswer = extractNumericValue(normalizedAnswer);
@@ -150,6 +155,10 @@ async function handleRadio(radio, page) {
   for (const r of radiosInGroup) {
     const optionLabel = (await getRadioOptionLabel(r)).trim().toLowerCase();
     const val = ((await r.getAttribute('value')) || '').trim().toLowerCase();
+
+    await r.waitForElementState('visible', { timeout: 2000 }).catch(() => {});
+    await r.waitForElementState('stable', { timeout: 2000 }).catch(() => {});
+    await r.scrollIntoViewIfNeeded().catch(() => {});
 
     if (
       optionLabel === normalizedAnswer ||
@@ -184,6 +193,10 @@ async function handleRadio(radio, page) {
       const optionLabelRaw = await getRadioOptionLabel(r);
       const optionLabel = optionLabelRaw.toLowerCase();
       const { min, max } = parseRange(optionLabel);
+
+      await r.waitForElementState('visible', { timeout: 2000 }).catch(() => {});
+      await r.waitForElementState('stable', { timeout: 2000 }).catch(() => {});
+      await r.scrollIntoViewIfNeeded().catch(() => {});
       if (!Number.isNaN(min) && !Number.isNaN(max) && numericAnswer >= min && numericAnswer <= max) {
         try {
           await r.check();
@@ -200,6 +213,9 @@ async function handleRadio(radio, page) {
 
   if (radiosInGroup.length) {
     try {
+      await radiosInGroup[0].waitForElementState('visible', { timeout: 2000 });
+      await radiosInGroup[0].waitForElementState('stable', { timeout: 2000 });
+      await radiosInGroup[0].scrollIntoViewIfNeeded();
       await radiosInGroup[0].check();
     } catch {
       await radiosInGroup[0].evaluate(el => el.click());
