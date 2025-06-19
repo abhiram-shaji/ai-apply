@@ -3,6 +3,7 @@ const {
   handleTextarea,
   handleSelect,
   handleCheckbox,
+  handleRadio,
 } = require('./formHandlers');
 
 async function processElements(elements, handler, label) {
@@ -41,7 +42,7 @@ async function fillForm(page) {
   await processElements(textareas, handleTextarea, 'textareas');
   await processElements(selects, handleSelect, 'selects');
   await processElements(checkboxes, handleCheckbox, 'checkboxes');
-  await processElements(radios, handleCheckbox, 'radios');
+  await processElements(radios, handleRadio, 'radios');
 }
 
 module.exports = { fillForm };
