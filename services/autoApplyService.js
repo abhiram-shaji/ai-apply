@@ -24,20 +24,21 @@ async function fillForm(page) {
 
 async function autoApply(jobsUrl) {
   const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
+
+  // Optional: persist login across runs
+  // const context = await browser.newContext({ storageState: 'linkedin-session.json' });
+  // Uncomment below to save session after login:
+  // await context.storageState({ path: 'linkedin-session.json' });
+
+  const context = await browser.newContext(); // Use this if you're already logged in manually
   const page = await context.newPage();
 
-  await page.goto('https://www.linkedin.com/login');
-  await page.fill('input[name="session_key"]', process.env.LINKEDIN_USERNAME || '');
-  await page.fill('input[name="session_password"]', process.env.LINKEDIN_PASSWORD || '');
-  await page.click('button[type="submit"]');
-
-  if (jobsUrl) {
-    await page.goto(jobsUrl);
-  } else {
-    console.log('Please manually navigate to the LinkedIn jobs page with Easy Apply filter.');
-    await page.waitForTimeout(30000);
-  }
+  // Navigate directly to jobs search page
+  await page.goto(
+    jobsUrl ||
+      'https://www.linkedin.com/jobs/search-results/?distance=25&f_AL=true&geoId=101174742&keywords=software%20developer&origin=SEMANTIC_SEARCH_HISTORY'
+  );
+  await page.waitForTimeout(5000); // Wait for the job listings to load
 
   const jobSelector = 'li.jobs-search-results__list-item';
   const dismissSelector = 'button[aria-label="Dismiss"]';
