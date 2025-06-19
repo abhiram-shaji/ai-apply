@@ -49,8 +49,21 @@ async function handleSelect(select) {
   console.log(`📝 Select label: "${label}"`);
   const answer = await getAnswer(label);
   console.log(`🔽 Trying to select option: "${answer}"`);
-  await select.selectOption({ label: answer });
-  console.log(`✅ Selected option for "${label}"`);
+  try {
+    await select.selectOption({ label: answer });
+    console.log(`✅ Selected option for "${label}"`);
+  } catch (err) {
+    console.log(`⚠️ Option by label failed: ${err.message}. Falling back...`);
+    const options = await select.$$('option');
+    for (const opt of options) {
+      const value = await opt.getAttribute('value');
+      if (value && value.toLowerCase() !== 'select an option') {
+        await select.selectOption(value);
+        console.log(`✅ Fallback selected value "${value}" for "${label}"`);
+        break;
+      }
+    }
+  }
 }
 
 async function handleCheckbox(checkbox) {
