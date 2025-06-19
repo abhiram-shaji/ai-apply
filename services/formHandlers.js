@@ -149,9 +149,9 @@ async function handleRadio(radio, page) {
     return;
   }
 
-  const pageForRadio = await radio.page();
-  await pageForRadio.waitForTimeout(500);
-  const radiosInGroup = await pageForRadio.$$(`input[type="radio"][name="${name}"]`);
+  // `page` is already passed in from the caller so use it directly
+  await page.waitForTimeout(500);
+  const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
 
   const normalizedAnswer = answer.trim().toLowerCase();
   const numericAnswer = extractNumericValue(normalizedAnswer);
