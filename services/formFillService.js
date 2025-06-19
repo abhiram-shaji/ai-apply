@@ -5,12 +5,16 @@ const {
   handleCheckbox,
   handleRadio,
 } = require('./formHandlers');
+const { delay } = require('../utils/delay');
+require('dotenv').config();
+const DELAY_MS = parseInt(process.env.DELAY_MS || '1000', 10);
 
 async function processElements(elements, handler, label) {
   console.log(`🔍 Found ${elements.length} ${label}`);
   for (const element of elements) {
     try {
       await handler(element);
+      await delay(DELAY_MS);
     } catch (err) {
       console.warn(`❌ Error processing ${label.slice(0, -1)}: ${err.message}`);
     }
@@ -39,9 +43,13 @@ async function fillForm(page) {
   );
 
   await processElements(inputs, handleInput, 'inputs');
+  await delay(DELAY_MS);
   await processElements(textareas, handleTextarea, 'textareas');
+  await delay(DELAY_MS);
   await processElements(selects, handleSelect, 'selects');
+  await delay(DELAY_MS);
   await processElements(checkboxes, handleCheckbox, 'checkboxes');
+  await delay(DELAY_MS);
   await processElements(radios, handleRadio, 'radios');
 }
 
