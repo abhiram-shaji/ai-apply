@@ -1,76 +1,24 @@
-const { getAnswer } = require('./aiAnswerService');
-const { getLabelFromInput } = require('../utils/labelUtils');
+const { handleInput, handleTextarea, handleSelect } = require('./formHandlers');
 
-async function fillInputs(page) {
-  const inputs = await page.$$('form input:not([type="hidden"])');
-  console.log(`🧩 Found ${inputs.length} input fields`);
-
-  for (const input of inputs) {
+async function processElements(elements, handler, label) {
+  console.log(`🔍 Found ${elements.length} ${label}`);
+  for (const element of elements) {
     try {
-      const value = await input.getAttribute('value');
-      if (value) {
-        console.log('➡️ Input already filled. Skipping.');
-        continue;
-      }
-
-      const label = await getLabelFromInput(input);
-      console.log(`📝 Input label: "${label}"`);
-
-      const answer = await getAnswer(label);
-      console.log(`🔤 Filling input with: "${answer}"`);
-
-      await input.fill(answer);
-      console.log(`✅ Filled input for "${label}"`);
+      await handler(element);
     } catch (err) {
-      console.warn(`❌ Error filling input: ${err.message}`);
-    }
-  }
-}
-
-async function fillTextareas(page) {
-  const textareas = await page.$$('form textarea');
-  console.log(`🧾 Found ${textareas.length} textareas`);
-
-  for (const textarea of textareas) {
-    try {
-      const label = await getLabelFromInput(textarea);
-      console.log(`📝 Textarea label: "${label}"`);
-
-      const answer = await getAnswer(label);
-      console.log(`🔤 Filling textarea with: "${answer}"`);
-
-      await textarea.fill(answer);
-      console.log(`✅ Filled textarea for "${label}"`);
-    } catch (err) {
-      console.warn(`❌ Error filling textarea: ${err.message}`);
-    }
-  }
-}
-
-async function fillSelects(page) {
-  const selects = await page.$$('form select');
-  console.log(`🎛️ Found ${selects.length} select fields`);
-
-  for (const select of selects) {
-    try {
-      const label = await getLabelFromInput(select);
-      console.log(`📝 Select label: "${label}"`);
-
-      const answer = await getAnswer(label);
-      console.log(`🔽 Trying to select option: "${answer}"`);
-
-      await select.selectOption({ label: answer });
-      console.log(`✅ Selected option for "${label}"`);
-    } catch (err) {
-      console.warn(`❌ Error selecting option for "${label}": ${err.message}`);
+      console.warn(`❌ Error processing ${label.slice(0, -1)}: ${err.message}`);
     }
   }
 }
 
 async function fillForm(page) {
-  await fillInputs(page);
-  await fillTextareas(page);
-  await fillSelects(page);
+  const inputs = await page.$$('form input:not([type="hidden"])');
+  const textareas = await page.$$('form textarea');
+  const selects = await page.$$('form select');
+
+  await processElements(inputs, handleInput, 'inputs');
+  await processElements(textareas, handleTextarea, 'textareas');
+  await processElements(selects, handleSelect, 'selects');
 }
 
 module.exports = { fillForm };
