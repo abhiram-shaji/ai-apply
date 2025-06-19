@@ -119,4 +119,39 @@ async function handleCheckbox(checkbox) {
   }
 }
 
-module.exports = { handleInput, handleTextarea, handleSelect, handleCheckbox };
+async function handleRadio(radio) {
+  const checked = await radio.isChecked();
+  if (checked) return;
+
+  const label = await getLabelFromInput(radio);
+  console.log(`🔘 Selecting radio: "${label}"`);
+
+  const page = await radio.page();
+  const id = await radio.getAttribute('id');
+  if (id) {
+    const labelEl = await page.$(`label[for="${id}"]`);
+    if (labelEl) {
+      try {
+        await labelEl.waitForElementState('visible', { timeout: 3000 });
+        await labelEl.click();
+        return;
+      } catch {
+        // fallback
+      }
+    }
+  }
+
+  try {
+    await radio.check();
+  } catch {
+    await radio.evaluate(el => el.click());
+  }
+}
+
+module.exports = {
+  handleInput,
+  handleTextarea,
+  handleSelect,
+  handleCheckbox,
+  handleRadio,
+};
