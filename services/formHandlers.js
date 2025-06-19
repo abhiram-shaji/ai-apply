@@ -135,6 +135,10 @@ async function handleRadio(radio, page) {
   if (checked) return;
 
   const label = await getLabelFromInput(radio);
+  if (label && label.toLowerCase().includes('resume')) {
+    console.log('↩️ Skipping resume selection question.');
+    return;
+  }
   const answer = await getAnswer(label);
   console.log(`🔘 Radio question: "${label}"`);
   console.log(`🧠 AI answer: "${answer}"`);

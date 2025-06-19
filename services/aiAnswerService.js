@@ -13,6 +13,8 @@ async function getAnswer(question) {
   if (normalized.includes('city')) return 'Victoria, British Columbia, Canada';
   if (normalized.includes('postal')) return 'V8N 4A8';
   if (normalized.includes('address')) return '3904 Haro Rd';
+  if (normalized.includes('state') || normalized.includes('province'))
+    return 'British Columbia';
   if (normalized.includes('cover letter'))
     return fs.readFileSync('coverletter.txt', 'utf-8');
 
