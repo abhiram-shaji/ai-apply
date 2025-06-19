@@ -12,11 +12,16 @@ async function handleInput(input) {
   console.log(`📝 Input label: "${label}"`);
   const answer = await getAnswer(label);
   console.log(`🔤 Filling input with: "${answer}"`);
-  await input.fill(answer);
-
   const ariaAuto = await input.getAttribute('aria-autocomplete');
   const role = await input.getAttribute('role');
-  if (ariaAuto === 'list' || role === 'combobox') {
+  const isTypeahead = ariaAuto === 'list' || role === 'combobox';
+  if (isTypeahead) {
+    await input.click({ clickCount: 3 });
+    await input.type(answer, { delay: 100 });
+  } else {
+    await input.fill(answer);
+  }
+  if (isTypeahead) {
     const page = await input.page();
     console.log('⌛ Waiting for autocomplete options...');
     try {
