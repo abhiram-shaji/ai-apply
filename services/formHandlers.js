@@ -129,7 +129,7 @@ async function handleCheckbox(checkbox) {
   }
 }
 
-async function handleRadio(radio) {
+async function handleRadio(radio, page) {
   const checked = await radio.isChecked();
   if (checked) return;
 
@@ -141,7 +141,6 @@ async function handleRadio(radio) {
   const name = await radio.getAttribute('name');
   if (!name) return;
 
-  const page = radio._page || (await radio.page());
   const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
 
   const normalizedAnswer = answer.trim().toLowerCase();

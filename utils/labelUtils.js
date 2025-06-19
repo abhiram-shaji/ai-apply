@@ -2,6 +2,13 @@ const { getAIExtractedLabel } = require('./aiLabelService');
 
 async function getLabelFromInput(input) {
   const label = await input.evaluate(el => {
+    // For radio buttons, prefer the fieldset legend text which usually
+    // represents the actual question for the group
+    if (el.getAttribute('type') === 'radio') {
+      const legend = el.closest('fieldset')?.querySelector('legend');
+      if (legend) return legend.innerText.trim();
+    }
+
     // 1. Directly associated label via id/for
     if (el.id) {
       const byFor = document.querySelector(`label[for="${el.id}"]`);
