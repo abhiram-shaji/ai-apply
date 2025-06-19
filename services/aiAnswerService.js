@@ -18,6 +18,7 @@ async function getAnswer(question) {
   const response = await openai.chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: finalPrompt }],
+    max_tokens: 90,
   });
 
   console.log('OpenAI response:', JSON.stringify(response, null, 2));
