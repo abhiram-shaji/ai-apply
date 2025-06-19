@@ -43,4 +43,20 @@ async function getLabelFromInput(input) {
   return aiLabel;
 }
 
-module.exports = { getLabelFromInput };
+async function getRadioOptionLabel(input) {
+  return input.evaluate(el => {
+    if (el.id) {
+      const byFor = document.querySelector(`label[for="${el.id}"]`);
+      if (byFor) return byFor.innerText.trim();
+    }
+    const parentLabel = el.closest('label');
+    if (parentLabel) return parentLabel.innerText.trim();
+
+    const ariaLabel = el.getAttribute('aria-label');
+    if (ariaLabel) return ariaLabel.trim();
+
+    return el.getAttribute('value') || '';
+  });
+}
+
+module.exports = { getLabelFromInput, getRadioOptionLabel };
