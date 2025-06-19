@@ -54,19 +54,36 @@ async function handleSelect(select) {
   console.log(`📝 Select label: "${label}"`);
   const answer = await getAnswer(label);
   console.log(`🔽 Trying to select option: "${answer}"`);
+  // Try selecting by the visible label first
   try {
     await select.selectOption({ label: answer });
-    console.log(`✅ Selected option for "${label}"`);
-  } catch (err) {
-    console.log(`⚠️ Option by label failed: ${err.message}. Falling back...`);
-    const options = await select.$$('option');
-    for (const opt of options) {
-      const value = await opt.getAttribute('value');
-      if (value && value.toLowerCase() !== 'select an option') {
-        await select.selectOption(value);
-        console.log(`✅ Fallback selected value "${value}" for "${label}"`);
-        break;
-      }
+    console.log(`✅ Selected option for "${label}" using label match`);
+    return;
+  } catch (errLabel) {
+    console.log(
+      `⚠️ Option by label failed: ${errLabel.message}. Trying value match...`
+    );
+  }
+
+  // If label match fails, attempt to match by the option value
+  try {
+    await select.selectOption({ value: answer });
+    console.log(`✅ Selected option for "${label}" using value match`);
+    return;
+  } catch (errValue) {
+    console.log(
+      `⚠️ Option by value failed: ${errValue.message}. Falling back...`
+    );
+  }
+
+  // Fallback: choose the first non-placeholder option
+  const options = await select.$$('option');
+  for (const opt of options) {
+    const value = await opt.getAttribute('value');
+    if (value && value.toLowerCase() !== 'select an option') {
+      await select.selectOption(value);
+      console.log(`✅ Fallback selected value "${value}" for "${label}"`);
+      break;
     }
   }
 }
