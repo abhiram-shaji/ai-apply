@@ -5,11 +5,14 @@ async function getAnswer(question) {
   const normalized = question.trim().toLowerCase();
 
   // Handle known form labels with static responses
-  if (normalized === 'First name') return 'Abhiram';
-  if (normalized === 'Last name') return 'Shaji';
-  if (normalized.includes('Phone country code')) return 'Canada (+1)';
-  if (normalized === 'Mobile phone number') return '2362553669';
-  if (normalized.includes('Email address')) return 'write4abhiram@gmail.com';
+  if (normalized === 'first name') return 'Abhiram';
+  if (normalized === 'last name') return 'Shaji';
+  if (normalized.includes('phone country code')) return 'Canada (+1)';
+  if (normalized.includes('mobile phone number')) return '2362553669';
+  if (normalized.includes('email')) return 'write4abhiram@gmail.com';
+  if (normalized.includes('city')) return 'Victoria';
+  if (normalized.includes('postal')) return 'V8N 4A8';
+  if (normalized.includes('address')) return '3904 Haro Rd';
 
   // Fall back to OpenAI for other prompts
   const rawPrompt = fs.readFileSync('prompt.txt', 'utf-8');
