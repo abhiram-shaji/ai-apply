@@ -13,6 +13,8 @@ async function getAnswer(question) {
   if (normalized.includes('city')) return 'Victoria, British Columbia, Canada';
   if (normalized.includes('postal')) return 'V8N 4A8';
   if (normalized.includes('address')) return '3904 Haro Rd';
+  if (normalized.includes('cover letter'))
+    return fs.readFileSync('coverletter.txt', 'utf-8');
 
   // Fall back to OpenAI for other prompts
   const rawPrompt = fs.readFileSync('prompt.txt', 'utf-8');
