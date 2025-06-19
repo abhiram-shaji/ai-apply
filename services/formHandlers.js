@@ -124,28 +124,32 @@ async function handleRadio(radio) {
   if (checked) return;
 
   const label = await getLabelFromInput(radio);
-  console.log(`🔘 Selecting radio: "${label}"`);
+  const answer = await getAnswer(label);
+  console.log(`🔘 Radio question: "${label}"`);
+  console.log(`🧠 AI answer: "${answer}"`);
 
-  const page = await radio.page();
-  const id = await radio.getAttribute('id');
-  if (id) {
-    const labelEl = await page.$(`label[for="${id}"]`);
-    if (labelEl) {
+  const name = await radio.getAttribute('name');
+  if (!name) return;
+
+  const page = radio._page || (await radio.page());
+  const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
+
+  for (const r of radiosInGroup) {
+    const val = await r.getAttribute('value');
+    if (val && val.trim().toLowerCase() === answer.trim().toLowerCase()) {
       try {
-        await labelEl.waitForElementState('visible', { timeout: 3000 });
-        await labelEl.click();
+        await r.check();
+        console.log(`✅ Selected radio value: "${val}"`);
         return;
       } catch {
-        // fallback
+        await r.evaluate(el => el.click());
+        console.log(`⚠️ Fallback click on: "${val}"`);
+        return;
       }
     }
   }
 
-  try {
-    await radio.check();
-  } catch {
-    await radio.evaluate(el => el.click());
-  }
+  console.warn(`❌ Could not find matching radio for answer: "${answer}"`);
 }
 
 module.exports = {
