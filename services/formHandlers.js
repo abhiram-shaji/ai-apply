@@ -1,5 +1,6 @@
 const { getAnswer } = require('./aiAnswerService');
-const { getLabelFromInput } = require('../utils/labelUtils');
+const { getLabelFromInput, getRadioOptionLabel } = require('../utils/labelUtils');
+const { extractNumericValue } = require('../utils/numberUtils');
 
 async function handleInput(input) {
   const value = await input.getAttribute('value');
@@ -144,9 +145,10 @@ async function handleRadio(radio, page) {
   const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
 
   const normalizedAnswer = answer.trim().toLowerCase();
+  const numericAnswer = extractNumericValue(normalizedAnswer);
 
   for (const r of radiosInGroup) {
-    const optionLabel = (await getLabelFromInput(r)).trim().toLowerCase();
+    const optionLabel = (await getRadioOptionLabel(r)).trim().toLowerCase();
     const val = ((await r.getAttribute('value')) || '').trim().toLowerCase();
 
     if (
@@ -167,24 +169,30 @@ async function handleRadio(radio, page) {
     }
   }
 
-  const numericAnswer = parseFloat(normalizedAnswer);
   if (!Number.isNaN(numericAnswer)) {
+    const parseRange = text => {
+      const parts = text.split(/-|to|–|—/);
+      const min = extractNumericValue(parts[0]);
+      let max = parts[1] ? extractNumericValue(parts[1]) : NaN;
+      if (Number.isNaN(max)) {
+        max = text.includes('+') ? Infinity : min;
+      }
+      return { min, max };
+    };
+
     for (const r of radiosInGroup) {
-      const optionLabel = (await getLabelFromInput(r)).toLowerCase();
-      const rangeMatch = optionLabel.match(/(\d+(?:\.\d+)?)[^\d]*(?:-|to)?[^\d]*(\d+(?:\.\d+)?)?/);
-      if (rangeMatch) {
-        const min = parseFloat(rangeMatch[1]);
-        const max = rangeMatch[2] ? parseFloat(rangeMatch[2]) : (optionLabel.includes('+') ? Infinity : min);
-        if (numericAnswer >= min && numericAnswer <= max) {
-          try {
-            await r.check();
-            console.log(`✅ Selected radio range option: "${optionLabel}"`);
-            return;
-          } catch {
-            await r.evaluate(el => el.click());
-            console.log(`⚠️ Fallback click on range option: "${optionLabel}"`);
-            return;
-          }
+      const optionLabelRaw = await getRadioOptionLabel(r);
+      const optionLabel = optionLabelRaw.toLowerCase();
+      const { min, max } = parseRange(optionLabel);
+      if (!Number.isNaN(min) && !Number.isNaN(max) && numericAnswer >= min && numericAnswer <= max) {
+        try {
+          await r.check();
+          console.log(`✅ Selected radio range option: "${optionLabel}"`);
+          return;
+        } catch {
+          await r.evaluate(el => el.click());
+          console.log(`⚠️ Fallback click on range option: "${optionLabel}"`);
+          return;
         }
       }
     }
