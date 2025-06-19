@@ -74,9 +74,31 @@ async function handleSelect(select) {
 async function handleCheckbox(checkbox) {
   const label = await getLabelFromInput(checkbox);
   const checked = await checkbox.isChecked();
-  if (!checked) {
-    console.log(`☑️ Checking "${label}"`);
+  if (checked) return;
+
+  console.log(`☑️ Checking "${label}"`);
+
+  // Try clicking the associated label to trigger LinkedIn's custom JS
+  const page = await checkbox.page();
+  const id = await checkbox.getAttribute('id');
+  if (id) {
+    const labelEl = await page.$(`label[for="${id}"]`);
+    if (labelEl) {
+      try {
+        await labelEl.waitForElementState('visible', { timeout: 3000 });
+        await labelEl.click();
+        return;
+      } catch {
+        // fall back to other methods
+      }
+    }
+  }
+
+  // Fallback: click via evaluation which bypasses overlay issues
+  try {
     await checkbox.check();
+  } catch {
+    await checkbox.evaluate(el => el.click());
   }
 }
 
