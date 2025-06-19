@@ -13,6 +13,25 @@ async function handleInput(input) {
   const answer = await getAnswer(label);
   console.log(`🔤 Filling input with: "${answer}"`);
   await input.fill(answer);
+
+  const ariaAuto = await input.getAttribute('aria-autocomplete');
+  const role = await input.getAttribute('role');
+  if (ariaAuto === 'list' || role === 'combobox') {
+    const page = await input.page();
+    console.log('⌛ Waiting for autocomplete options...');
+    try {
+      const optionSelector = '[role="listbox"] [role="option"], ul[role="listbox"] li, ul li[role="option"]';
+      await page.waitForSelector(optionSelector, { timeout: 3000 });
+      const firstOption = await page.$(optionSelector);
+      if (firstOption) {
+        await firstOption.click();
+        console.log(`✅ Autocomplete option selected for "${label}"`);
+      }
+    } catch {
+      console.log(`⚠️ Autocomplete options not found for "${label}"`);
+    }
+  }
+
   console.log(`✅ Filled input for "${label}"`);
 }
 
@@ -34,4 +53,13 @@ async function handleSelect(select) {
   console.log(`✅ Selected option for "${label}"`);
 }
 
-module.exports = { handleInput, handleTextarea, handleSelect };
+async function handleCheckbox(checkbox) {
+  const label = await getLabelFromInput(checkbox);
+  const checked = await checkbox.isChecked();
+  if (!checked) {
+    console.log(`☑️ Checking "${label}"`);
+    await checkbox.check();
+  }
+}
+
+module.exports = { handleInput, handleTextarea, handleSelect, handleCheckbox };
