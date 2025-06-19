@@ -10,7 +10,7 @@ async function getAnswer(question) {
   if (normalized.includes('phone country code')) return 'Canada (+1)';
   if (normalized.includes('mobile phone number')) return '2362553669';
   if (normalized.includes('email')) return 'write4abhiram@gmail.com';
-  if (normalized.includes('city')) return 'Victoria';
+  if (normalized.includes('city')) return 'Victoria, British Columbia, Canada';
   if (normalized.includes('postal')) return 'V8N 4A8';
   if (normalized.includes('address')) return '3904 Haro Rd';
 
