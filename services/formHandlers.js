@@ -27,10 +27,20 @@ async function handleInput(input) {
     try {
       const optionSelector = '[role="listbox"] [role="option"], ul[role="listbox"] li, ul li[role="option"]';
       await page.waitForSelector(optionSelector, { timeout: 3000 });
-      const firstOption = await page.$(optionSelector);
-      if (firstOption) {
-        await firstOption.click();
-        console.log(`✅ Autocomplete option selected for "${label}"`);
+      const options = await page.$$(optionSelector);
+      let matched = false;
+      for (const opt of options) {
+        const text = ((await opt.innerText()) || '').trim().toLowerCase();
+        if (text.includes(answer.trim().toLowerCase())) {
+          await opt.click();
+          console.log(`✅ Autocomplete option "${text}" selected for "${label}"`);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched && options[0]) {
+        await options[0].click();
+        console.log(`✅ Default autocomplete option selected for "${label}"`);
       }
     } catch {
       console.log(`⚠️ Autocomplete options not found for "${label}"`);
@@ -134,22 +144,63 @@ async function handleRadio(radio) {
   const page = radio._page || (await radio.page());
   const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
 
+  const normalizedAnswer = answer.trim().toLowerCase();
+
   for (const r of radiosInGroup) {
-    const val = await r.getAttribute('value');
-    if (val && val.trim().toLowerCase() === answer.trim().toLowerCase()) {
+    const optionLabel = (await getLabelFromInput(r)).trim().toLowerCase();
+    const val = ((await r.getAttribute('value')) || '').trim().toLowerCase();
+
+    if (
+      optionLabel === normalizedAnswer ||
+      val === normalizedAnswer ||
+      optionLabel.includes(normalizedAnswer) ||
+      normalizedAnswer.includes(optionLabel)
+    ) {
       try {
         await r.check();
-        console.log(`✅ Selected radio value: "${val}"`);
+        console.log(`✅ Selected radio option: "${optionLabel || val}"`);
         return;
       } catch {
         await r.evaluate(el => el.click());
-        console.log(`⚠️ Fallback click on: "${val}"`);
+        console.log(`⚠️ Fallback click on: "${optionLabel || val}"`);
         return;
       }
     }
   }
 
-  console.warn(`❌ Could not find matching radio for answer: "${answer}"`);
+  const numericAnswer = parseFloat(normalizedAnswer);
+  if (!Number.isNaN(numericAnswer)) {
+    for (const r of radiosInGroup) {
+      const optionLabel = (await getLabelFromInput(r)).toLowerCase();
+      const rangeMatch = optionLabel.match(/(\d+(?:\.\d+)?)[^\d]*(?:-|to)?[^\d]*(\d+(?:\.\d+)?)?/);
+      if (rangeMatch) {
+        const min = parseFloat(rangeMatch[1]);
+        const max = rangeMatch[2] ? parseFloat(rangeMatch[2]) : (optionLabel.includes('+') ? Infinity : min);
+        if (numericAnswer >= min && numericAnswer <= max) {
+          try {
+            await r.check();
+            console.log(`✅ Selected radio range option: "${optionLabel}"`);
+            return;
+          } catch {
+            await r.evaluate(el => el.click());
+            console.log(`⚠️ Fallback click on range option: "${optionLabel}"`);
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  if (radiosInGroup.length) {
+    try {
+      await radiosInGroup[0].check();
+    } catch {
+      await radiosInGroup[0].evaluate(el => el.click());
+    }
+    console.log(`⚠️ Fallback selected first option for "${label}"`);
+  } else {
+    console.warn(`❌ Could not find matching radio for answer: "${answer}"`);
+  }
 }
 
 module.exports = {
