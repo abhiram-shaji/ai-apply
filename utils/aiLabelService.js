@@ -9,7 +9,7 @@ ${htmlSnippet}
   `.trim();
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4',
+    model: 'gpt-4.1-nano',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 50,
   });
