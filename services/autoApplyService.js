@@ -1,7 +1,9 @@
 const { chromium } = require('playwright');
 const { fillForm } = require('./formFillService');
 const { logJob } = require('../utils/logger');
+const { delay } = require('../utils/delay');
 require('dotenv').config();
+const DELAY_MS = parseInt(process.env.DELAY_MS || '1000', 10);
 
 
 async function autoApply(jobsUrl) {
@@ -13,6 +15,7 @@ async function autoApply(jobsUrl) {
   const url = jobsUrl || 'https://www.linkedin.com/jobs/search-results/?distance=25&f_AL=true&geoId=101174742&keywords=software%20developer&origin=SEMANTIC_SEARCH_HISTORY';
   await page.goto(url);
   await page.waitForSelector('li.scaffold-layout__list-item');
+  await delay(DELAY_MS);
 
   const jobCards = await page.$$('li.scaffold-layout__list-item');
   console.log(`📄 Found ${jobCards.length} job(s).`);
@@ -20,6 +23,7 @@ async function autoApply(jobsUrl) {
   for (const job of jobCards) {
     await job.click();
     await page.waitForTimeout(2000);
+    await delay(DELAY_MS);
 
     const easyApply = await page.$('button.jobs-apply-button');
     if (!easyApply) {
@@ -29,10 +33,12 @@ async function autoApply(jobsUrl) {
 
     console.log('✅ Easy Apply button found. Clicking...');
     await easyApply.click();
+    await delay(DELAY_MS);
 
     let hasNext = true;
     while (hasNext) {
       await fillForm(page);
+      await delay(DELAY_MS);
 
       const next = await page.$('button:has-text("Next")');
       const submit = await page.$('button:has-text("Submit application")');
@@ -41,6 +47,7 @@ async function autoApply(jobsUrl) {
         console.log('➡️ Clicking Next...');
         await next.click();
         await page.waitForTimeout(1000);
+        await delay(DELAY_MS);
       } else if (submit) {
         console.log('📨 Submitting application...');
         await submit.click();
@@ -48,6 +55,7 @@ async function autoApply(jobsUrl) {
         logJob('applied', await job.innerText(), await page.url());
         hasNext = false;
         console.log('✅ Application submitted and logged.');
+        await delay(DELAY_MS);
       } else {
         console.log('⚠️ No Next or Submit button. Exiting form.');
         hasNext = false;
@@ -61,6 +69,7 @@ async function autoApply(jobsUrl) {
     }
 
     await page.waitForTimeout(1000);
+    await delay(DELAY_MS);
   }
 
   // Optionally keep browser open
