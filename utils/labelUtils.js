@@ -43,6 +43,41 @@ async function getLabelFromInput(input) {
   return aiLabel;
 }
 
+async function getLabelFromInputNoAI(input) {
+  const label = await input.evaluate(el => {
+    if (el.getAttribute('type') === 'radio') {
+      const legend = el.closest('fieldset')?.querySelector('legend');
+      if (legend) return legend.innerText.trim();
+    }
+
+    if (el.id) {
+      const byFor = document.querySelector(`label[for="${el.id}"]`);
+      if (byFor) return byFor.innerText.trim();
+    }
+
+    const labelEl = el.closest('div')?.querySelector('label');
+    if (labelEl) return labelEl.innerText.trim();
+
+    const ariaLabel = el.getAttribute('aria-label');
+    if (ariaLabel) return ariaLabel.trim();
+    const ariaLabelledBy = el.getAttribute('aria-labelledby');
+    if (ariaLabelledBy) {
+      const ref = document.getElementById(ariaLabelledBy);
+      if (ref) return ref.innerText.trim();
+    }
+
+    const placeholder = el.getAttribute('placeholder');
+    if (placeholder && placeholder.length > 5) return placeholder.trim();
+
+    const fieldsetLegend = el.closest('fieldset')?.querySelector('legend');
+    if (fieldsetLegend) return fieldsetLegend.innerText.trim();
+
+    return null;
+  });
+
+  return label || '';
+}
+
 async function getRadioOptionLabel(input) {
   return input.evaluate(el => {
     if (el.id) {
@@ -59,4 +94,4 @@ async function getRadioOptionLabel(input) {
   });
 }
 
-module.exports = { getLabelFromInput, getRadioOptionLabel };
+module.exports = { getLabelFromInput, getLabelFromInputNoAI, getRadioOptionLabel };
