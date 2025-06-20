@@ -141,6 +141,18 @@ async function autoApply(jobsUrl) {
         console.log('📨 Submitting application...');
         await submit.click();
         await page.waitForTimeout(1000);
+        const doneAfterSubmit = await waitForVisibleButton(
+          page,
+          'button:has-text("Done"), button[aria-label="Done"]',
+          10000
+        );
+        if (doneAfterSubmit) {
+          console.log('✅ Done button appeared after submit. Clicking...');
+          await doneAfterSubmit.click();
+          await page.waitForTimeout(1000);
+        } else {
+          console.log('⚠️ Done button not found after submit.');
+        }
         logJob('applied', await job.innerText(), await page.url());
         console.log('✅ Application submitted and logged.');
         hasNext = false;
