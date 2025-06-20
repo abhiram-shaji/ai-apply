@@ -134,6 +134,15 @@ async function handleCheckbox(checkbox) {
 }
 
 async function handleRadio(radio, page) {
+  // Ensure element is still in the DOM before interacting
+  const attached = await radio
+    .evaluate(el => el.isConnected)
+    .catch(() => false);
+  if (!attached) {
+    console.log('⚠️ Radio element detached. Skipping.');
+    return;
+  }
+
   const checked = await radio.isChecked();
   if (checked) return;
 
