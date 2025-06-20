@@ -8,7 +8,7 @@ const { extractNumericValue } = require('../utils/numberUtils');
 
 require('dotenv').config();
 
-async function handleInput(input) {
+async function handleInput(input, page) {
   const type = (await input.getAttribute('type')) || '';
 
   if (type === 'file') {
@@ -44,7 +44,6 @@ async function handleInput(input) {
     await input.fill(answer);
   }
   if (isTypeahead) {
-    const page = await input.page();
     console.log('⌛ Waiting for autocomplete options...');
     try {
       const optionSelector = '[role="listbox"] [role="option"], ul[role="listbox"] li, ul li[role="option"]';
@@ -180,7 +179,7 @@ async function handleSelect(select) {
   }
 }
 
-async function handleCheckbox(checkbox) {
+async function handleCheckbox(checkbox, page) {
   const label = await getLabelFromInputNoAI(checkbox);
   const checked = await checkbox.isChecked();
   if (checked) return;
@@ -188,7 +187,6 @@ async function handleCheckbox(checkbox) {
   console.log(`☑️ Checking "${label}"`);
 
   // Try clicking the associated label to trigger LinkedIn's custom JS
-  const page = await checkbox.page();
   const id = await checkbox.getAttribute('id');
   if (id) {
     const labelEl = await page.$(`label[for="${id}"]`);
