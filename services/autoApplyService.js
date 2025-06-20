@@ -98,7 +98,9 @@ async function autoApply(jobsUrl) {
     if (
       jobText.includes('french') ||
       jobText.includes('fran\u00e7ais') ||
-      jobText.includes('francais')
+      jobText.includes('francais') ||
+      jobText.includes('d\u00e9veloppeur') ||
+      jobText.includes('developpeur')
     ) {
       console.log('\ud83c\uddeb\ud83c\uddf7 French job detected. Skipping...');
       const dismiss = await job.$('button[aria-label^="Dismiss"]');
