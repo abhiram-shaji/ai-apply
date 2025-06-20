@@ -40,7 +40,9 @@ async function autoApply(jobsUrl) {
       await fillForm(page);
       await delay(DELAY_MS);
 
-      const next = await page.$('button:has-text("Next")');
+      const next = await page.$(
+        'button:has-text("Next"), button:has-text("Review"), button:has-text("Submit"), button:has-text("Done")'
+      );
       const submit = await page.$('button:has-text("Submit application")');
 
       if (next) {
