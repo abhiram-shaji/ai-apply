@@ -17,10 +17,17 @@ async function autoApply(jobsUrl) {
   await page.waitForSelector('li.scaffold-layout__list-item');
   await delay(DELAY_MS);
 
-  const jobCards = await page.$$('li.scaffold-layout__list-item');
+  let jobCards = await page.$$('li.scaffold-layout__list-item');
   console.log(`📄 Found ${jobCards.length} job(s).`);
 
-  for (const job of jobCards) {
+  let applicationCount = 0;
+
+  for (let i = 0; i < jobCards.length; i++) {
+    // Re-query job cards each iteration to avoid stale element handles
+    jobCards = await page.$$('li.scaffold-layout__list-item');
+    const job = jobCards[i];
+    if (!job) break;
+
     await job.click();
     await page.waitForTimeout(2000);
     await delay(DELAY_MS);
@@ -79,6 +86,15 @@ async function autoApply(jobsUrl) {
 
     await page.waitForTimeout(1000);
     await delay(DELAY_MS);
+
+    applicationCount++;
+
+    if (applicationCount % 5 === 0) {
+      console.log('🔄 Refreshing job search page to prevent stale elements...');
+      await page.reload();
+      await page.waitForSelector('li.scaffold-layout__list-item');
+      await delay(DELAY_MS);
+    }
   }
 
   // Optionally keep browser open
