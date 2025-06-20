@@ -100,7 +100,15 @@ async function autoApply(jobsUrl) {
 
     const easyApply = await page.$('button.jobs-apply-button');
     if (!easyApply) {
-      console.log('❌ No Easy Apply button found. Skipping...');
+      console.log('❌ No Easy Apply button found. Dismissing...');
+      const dismiss = await job.$('button[aria-label^="Dismiss"]');
+      if (dismiss) {
+        await dismiss.click();
+        console.log('🗑️ Job dismissed due to missing Easy Apply.');
+      }
+      logJob('skipped', await job.innerText(), await page.url());
+      await page.waitForTimeout(1000);
+      await delay(DELAY_MS);
       continue;
     }
 
