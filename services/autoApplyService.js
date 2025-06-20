@@ -37,6 +37,26 @@ async function handleStuckForm(page, job) {
   await delay(DELAY_MS);
 }
 
+async function clickAnyContinueButton(page) {
+  const buttons = await page.$$('button');
+  for (const btn of buttons) {
+    const aria = (await btn.getAttribute('aria-label')) || '';
+    const text = (await btn.innerText()) || '';
+    if (
+      aria.toLowerCase().includes('continue the apply process') ||
+      text.toLowerCase().includes('continue applying') ||
+      text.toLowerCase().includes('continue to apply') ||
+      text.toLowerCase().includes('continue anyway')
+    ) {
+      console.log(`➡️ Clicking continue button: ${aria || text}`);
+      await btn.click();
+      await page.waitForTimeout(1000);
+      await delay(DELAY_MS);
+      return true;
+    }
+  }
+  return false;
+}
 
 async function autoApply(jobsUrl) {
   const context = await chromium.launchPersistentContext('./linkedin-session', {
@@ -44,7 +64,9 @@ async function autoApply(jobsUrl) {
   });
 
   const page = await context.newPage();
-  const url = jobsUrl || 'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r604800&geoId=101174742&keywords=web%20developer&origin=SEMANTIC_SEARCH_HISTORY&refId=iZaMZL2W8d0bEQGdZrWGpA%3D%3D&trackingId=0659OnBi4qSBu%2BxqgcEM5w%3D%3D';
+  const url =
+    jobsUrl ||
+    'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r604800&geoId=101174742&keywords=web%20developer&origin=SEMANTIC_SEARCH_HISTORY';
   await page.goto(url);
   await page.waitForSelector('li.scaffold-layout__list-item');
   await delay(DELAY_MS);
@@ -55,7 +77,6 @@ async function autoApply(jobsUrl) {
   let applicationCount = 0;
 
   for (let i = 0; i < jobCards.length; i++) {
-    // Re-query job cards each iteration to avoid stale element handles
     jobCards = await page.$$('li.scaffold-layout__list-item');
     const job = jobCards[i];
     if (!job) break;
@@ -81,10 +102,6 @@ async function autoApply(jobsUrl) {
 
       const doneBtn = await page.$('button:has-text("Done")');
       const submit = await page.$('button:has-text("Submit application")');
-      const continueApplying = await page.$(
-        'button:has-text("Continue applying"), button:has-text("Continue to apply")'
-      );
-      const continueAnyway = await page.$('button:has-text("Continue anyway")');
       const easyApplyAgain = await page.$('button.jobs-apply-button');
       const next = await page.$(
         'button:has-text("Next"), button:has-text("Review"), button:has-text("Submit")'
@@ -103,17 +120,10 @@ async function autoApply(jobsUrl) {
         await page.waitForTimeout(1000);
         logJob('applied', await job.innerText(), await page.url());
         console.log('✅ Application submitted and logged.');
+        hasNext = false;
         await delay(DELAY_MS);
-      } else if (continueApplying) {
-        console.log('➡️ Clicking Continue applying...');
-        await continueApplying.click();
-        await page.waitForTimeout(1000);
-        await delay(DELAY_MS);
-      } else if (continueAnyway) {
-        console.log('➡️ Clicking Continue anyway...');
-        await continueAnyway.click();
-        await page.waitForTimeout(1000);
-        await delay(DELAY_MS);
+      } else if (await clickAnyContinueButton(page)) {
+        // Handled inside helper
       } else if (easyApplyAgain) {
         console.log('🔄 Detected Easy Apply button. Restarting application loop...');
         hasNext = false;
@@ -143,7 +153,6 @@ async function autoApply(jobsUrl) {
 
     await page.waitForTimeout(1000);
     await delay(DELAY_MS);
-
     applicationCount++;
 
     if (applicationCount % 5 === 0) {
@@ -151,12 +160,11 @@ async function autoApply(jobsUrl) {
       await page.reload();
       await page.waitForSelector('li.scaffold-layout__list-item');
       await delay(DELAY_MS);
-      i = -1; // restart job index so next loop begins from first job after refresh
+      i = -1;
     }
   }
 
-  // Optionally keep browser open
-  // await context.close();
+  // await context.close(); // Optional
 }
 
 module.exports = { autoApply };
