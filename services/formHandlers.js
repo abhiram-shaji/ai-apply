@@ -4,6 +4,7 @@ const {
   getLabelFromInputNoAI,
   getRadioOptionLabel,
 } = require('../utils/labelUtils');
+const { extractNumericValue } = require('../utils/numberUtils');
 
 async function handleInput(input) {
   const value = await input.getAttribute('value');
@@ -90,8 +91,68 @@ async function handleSelect(select) {
     );
   }
 
-  // Fallback: choose the first non-placeholder option
+  // Additional heuristics for numeric and yes/no answers
   const options = await select.$$('option');
+  const normalizedAnswer = answer.trim().toLowerCase();
+  const answerNum = extractNumericValue(normalizedAnswer);
+
+  // Try yes/no match
+  if (['yes', 'no'].includes(normalizedAnswer)) {
+    for (const opt of options) {
+      const text = ((await opt.innerText()) || '').trim().toLowerCase();
+      const val = ((await opt.getAttribute('value')) || '').trim().toLowerCase();
+      if (text.includes(normalizedAnswer) || val === normalizedAnswer) {
+        await select.selectOption(val || { label: text });
+        console.log(`✅ Selected option for "${label}" using yes/no match`);
+        return;
+      }
+    }
+  }
+
+  // Try numeric match or range match
+  if (!Number.isNaN(answerNum)) {
+    for (const opt of options) {
+      const text = ((await opt.innerText()) || '').toLowerCase();
+      const val = ((await opt.getAttribute('value')) || '').toLowerCase();
+
+      const rangeMatch = text.match(/(\d+(?:\.\d+)?)\D+(\d+(?:\.\d+)?)/);
+      if (rangeMatch) {
+        const start = parseFloat(rangeMatch[1]);
+        const end = parseFloat(rangeMatch[2]);
+        if (answerNum >= start && answerNum <= end) {
+          await select.selectOption(val || { label: text });
+          console.log(
+            `✅ Selected option for "${label}" matching numeric range`
+          );
+          return;
+        }
+      }
+
+      const plusMatch = text.match(/(\d+(?:\.\d+)?)\s*\+/);
+      if (plusMatch) {
+        const min = parseFloat(plusMatch[1]);
+        if (answerNum >= min) {
+          await select.selectOption(val || { label: text });
+          console.log(
+            `✅ Selected option for "${label}" matching plus range`
+          );
+          return;
+        }
+      }
+
+      const textNum = extractNumericValue(text);
+      const valNum = extractNumericValue(val);
+      if (textNum === answerNum || valNum === answerNum) {
+        await select.selectOption(val || { label: text });
+        console.log(
+          `✅ Selected option for "${label}" matching numeric value`
+        );
+        return;
+      }
+    }
+  }
+
+  // Fallback: choose the first non-placeholder option
   for (const opt of options) {
     const value = await opt.getAttribute('value');
     if (value && value.toLowerCase() !== 'select an option') {
