@@ -103,6 +103,9 @@ async function autoApply(jobsUrl) {
       const doneBtn = await page.$('button:has-text("Done")');
       const submit = await page.$('button:has-text("Submit application")');
       const easyApplyAgain = await page.$('button.jobs-apply-button');
+      const dialogOpen = await page.$(
+        'div.jobs-easy-apply-modal, div.jobs-apply-modal, div[role="dialog"]'
+      );
       const next = await page.$(
         'button:has-text("Next"), button:has-text("Review"), button:has-text("Submit")'
       );
@@ -124,7 +127,7 @@ async function autoApply(jobsUrl) {
         await delay(DELAY_MS);
       } else if (await clickAnyContinueButton(page)) {
         // Handled inside helper
-      } else if (easyApplyAgain) {
+      } else if (easyApplyAgain && !dialogOpen) {
         console.log('🔄 Detected Easy Apply button. Restarting application loop...');
         hasNext = false;
       } else if (next) {
