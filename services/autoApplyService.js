@@ -58,6 +58,19 @@ async function clickAnyContinueButton(page) {
   return false;
 }
 
+async function waitForVisibleButton(page, selector, timeout = 2000) {
+  try {
+    await page.waitForSelector(selector, { timeout });
+    const btn = await page.$(selector);
+    if (btn && (await btn.isVisible())) {
+      return btn;
+    }
+  } catch (err) {
+    // ignore timeout errors
+  }
+  return null;
+}
+
 async function autoApply(jobsUrl) {
   const context = await chromium.launchPersistentContext('./linkedin-session', {
     headless: false,
@@ -100,8 +113,14 @@ async function autoApply(jobsUrl) {
       await fillForm(page);
       await delay(DELAY_MS);
 
-      const doneBtn = await page.$('button:has-text("Done")');
-      const submit = await page.$('button:has-text("Submit application")');
+      const doneBtn = await waitForVisibleButton(
+        page,
+        'button:has-text("Done"), button[aria-label="Done"]'
+      );
+      const submit = await waitForVisibleButton(
+        page,
+        'button:has-text("Submit application"), button[aria-label="Submit application"]'
+      );
       const easyApplyAgain = await page.$('button.jobs-apply-button');
       const dialogOpen = await page.$(
         'div.jobs-easy-apply-modal, div.jobs-apply-modal, div[role="dialog"]'
