@@ -213,6 +213,8 @@ async function handleRadio(radio, page) {
     return;
   }
 
+  const normalizedLabel = (label || '').toLowerCase();
+
   const name = await radio.getAttribute('name');
   if (!name) {
     console.warn('⚠️ No radio group found.');
@@ -223,6 +225,23 @@ async function handleRadio(radio, page) {
   const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
   if (!radiosInGroup.length) return;
 
+  let toSelect = null;
+
+  if (
+    normalizedLabel.includes('have you ever been') &&
+    normalizedLabel.includes('employed by')
+  ) {
+    console.log('🔎 Employment history question detected. Selecting "No".');
+    for (const r of radiosInGroup) {
+      const optionLabel = (await getRadioOptionLabel(r)).trim().toLowerCase();
+      const val = ((await r.getAttribute('value')) || '').trim().toLowerCase();
+      if (optionLabel === 'no' || val === 'no') {
+        toSelect = r;
+        break;
+      }
+    }
+  }
+
   let yesRadio = null;
   for (const r of radiosInGroup) {
     const optionLabel = (await getRadioOptionLabel(r)).trim().toLowerCase();
@@ -230,12 +249,13 @@ async function handleRadio(radio, page) {
     if (optionLabel === 'yes' || val === 'yes') yesRadio = r;
   }
 
-  let toSelect;
-  if (yesRadio && radiosInGroup.length >= 2) {
-    toSelect = yesRadio;
-  } else {
-    const midIndex = Math.floor(radiosInGroup.length / 2);
-    toSelect = radiosInGroup[midIndex];
+  if (!toSelect) {
+    if (yesRadio && radiosInGroup.length >= 2) {
+      toSelect = yesRadio;
+    } else {
+      const midIndex = Math.floor(radiosInGroup.length / 2);
+      toSelect = radiosInGroup[midIndex];
+    }
   }
 
   try {
