@@ -94,6 +94,26 @@ async function autoApply(jobsUrl) {
     const job = jobCards[i];
     if (!job) break;
 
+    const jobText = ((await job.innerText()) || '').toLowerCase();
+    if (
+      jobText.includes('french') ||
+      jobText.includes('fran\u00e7ais') ||
+      jobText.includes('francais') ||
+      jobText.includes('d\u00e9veloppeur') ||
+      jobText.includes('developpeur')
+    ) {
+      console.log('\ud83c\uddeb\ud83c\uddf7 French job detected. Skipping...');
+      const dismiss = await job.$('button[aria-label^="Dismiss"]');
+      if (dismiss) {
+        await dismiss.click();
+        console.log('\ud83d\uddd1\ufe0f Job dismissed due to French language.');
+      }
+      logJob('skipped', await job.innerText(), await page.url());
+      await page.waitForTimeout(1000);
+      await delay(DELAY_MS);
+      continue;
+    }
+
     await job.click();
     await page.waitForTimeout(2000);
     await delay(DELAY_MS);
