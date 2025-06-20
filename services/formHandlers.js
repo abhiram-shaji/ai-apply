@@ -66,6 +66,13 @@ async function handleInput(input, page) {
     } catch {
       console.log(`⚠️ Autocomplete options not found for "${label}"`);
     }
+
+    try {
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+    } catch (err) {
+      console.log(`⚠️ Failed to close dropdown for "${label}": ${err.message}`);
+    }
   }
 
   console.log(`✅ Filled input for "${label}"`);
