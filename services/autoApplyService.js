@@ -81,9 +81,11 @@ async function autoApply(jobsUrl) {
 
       const doneBtn = await page.$('button:has-text("Done")');
       const submit = await page.$('button:has-text("Submit application")');
+      const continueAnyway = await page.$('button:has-text("Continue anyway")');
       const next = await page.$(
         'button:has-text("Next"), button:has-text("Review"), button:has-text("Submit")'
       );
+      const easyApplyAgain = await page.$('button.jobs-apply-button');
 
       if (doneBtn) {
         console.log('✅ Done button detected. Finishing application...');
@@ -99,6 +101,11 @@ async function autoApply(jobsUrl) {
         logJob('applied', await job.innerText(), await page.url());
         console.log('✅ Application submitted and logged.');
         await delay(DELAY_MS);
+      } else if (continueAnyway) {
+        console.log('➡️ Clicking Continue anyway...');
+        await continueAnyway.click();
+        await page.waitForTimeout(1000);
+        await delay(DELAY_MS);
       } else if (next) {
         console.log('➡️ Clicking Next...');
         try {
@@ -110,6 +117,9 @@ async function autoApply(jobsUrl) {
           await handleStuckForm(page, job);
           hasNext = false;
         }
+      } else if (easyApplyAgain) {
+        console.log('🔄 Detected Easy Apply button. Restarting application loop...');
+        hasNext = false;
       } else {
         console.log('⚠️ No Next, Submit, or Done button. Exiting form.');
         await handleStuckForm(page, job);
@@ -133,6 +143,7 @@ async function autoApply(jobsUrl) {
       await page.reload();
       await page.waitForSelector('li.scaffold-layout__list-item');
       await delay(DELAY_MS);
+      i = -1; // restart job index so next loop begins from first job after refresh
     }
   }
 
