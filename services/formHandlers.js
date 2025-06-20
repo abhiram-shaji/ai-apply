@@ -1,6 +1,9 @@
 const { getAnswer } = require('./aiAnswerService');
-const { getLabelFromInput, getRadioOptionLabel } = require('../utils/labelUtils');
-const { extractNumericValue } = require('../utils/numberUtils');
+const {
+  getLabelFromInput,
+  getLabelFromInputNoAI,
+  getRadioOptionLabel,
+} = require('../utils/labelUtils');
 
 async function handleInput(input) {
   const value = await input.getAttribute('value');
@@ -100,7 +103,7 @@ async function handleSelect(select) {
 }
 
 async function handleCheckbox(checkbox) {
-  const label = await getLabelFromInput(checkbox);
+  const label = await getLabelFromInputNoAI(checkbox);
   const checked = await checkbox.isChecked();
   if (checked) return;
 
@@ -134,100 +137,47 @@ async function handleRadio(radio, page) {
   const checked = await radio.isChecked();
   if (checked) return;
 
-  const label = await getLabelFromInput(radio);
+  const label = await getLabelFromInputNoAI(radio);
   if (label && label.toLowerCase().includes('resume')) {
     console.log('↩️ Skipping resume selection question.');
     return;
   }
-  const answer = await getAnswer(label);
-  console.log(`🔘 Radio question: "${label}"`);
-  console.log(`🧠 AI answer: "${answer}"`);
 
   const name = await radio.getAttribute('name');
   if (!name) {
-    console.warn(`⚠️ No radio group found for: "${label}"`);
+    console.warn('⚠️ No radio group found.');
     return;
   }
 
-  // `page` is already passed in from the caller so use it directly
   await page.waitForTimeout(500);
   const radiosInGroup = await page.$$(`input[type="radio"][name="${name}"]`);
+  if (!radiosInGroup.length) return;
 
-  const normalizedAnswer = answer.trim().toLowerCase();
-  const numericAnswer = extractNumericValue(normalizedAnswer);
-
+  let yesRadio = null;
   for (const r of radiosInGroup) {
     const optionLabel = (await getRadioOptionLabel(r)).trim().toLowerCase();
     const val = ((await r.getAttribute('value')) || '').trim().toLowerCase();
-
-    await r.waitForElementState('visible', { timeout: 2000 }).catch(() => {});
-    await r.waitForElementState('stable', { timeout: 2000 }).catch(() => {});
-    await r.scrollIntoViewIfNeeded().catch(() => {});
-
-    if (
-      optionLabel === normalizedAnswer ||
-      val === normalizedAnswer ||
-      optionLabel.includes(normalizedAnswer) ||
-      normalizedAnswer.includes(optionLabel)
-    ) {
-      try {
-        await r.check();
-        console.log(`✅ Selected radio option: "${optionLabel || val}"`);
-        return;
-      } catch {
-        await r.evaluate(el => el.click());
-        console.log(`⚠️ Fallback click on: "${optionLabel || val}"`);
-        return;
-      }
-    }
+    if (optionLabel === 'yes' || val === 'yes') yesRadio = r;
   }
 
-  if (!Number.isNaN(numericAnswer)) {
-    const parseRange = text => {
-      const parts = text.split(/-|to|–|—/);
-      const min = extractNumericValue(parts[0]);
-      let max = parts[1] ? extractNumericValue(parts[1]) : NaN;
-      if (Number.isNaN(max)) {
-        max = text.includes('+') ? Infinity : min;
-      }
-      return { min, max };
-    };
-
-    for (const r of radiosInGroup) {
-      const optionLabelRaw = await getRadioOptionLabel(r);
-      const optionLabel = optionLabelRaw.toLowerCase();
-      const { min, max } = parseRange(optionLabel);
-
-      await r.waitForElementState('visible', { timeout: 2000 }).catch(() => {});
-      await r.waitForElementState('stable', { timeout: 2000 }).catch(() => {});
-      await r.scrollIntoViewIfNeeded().catch(() => {});
-      if (!Number.isNaN(min) && !Number.isNaN(max) && numericAnswer >= min && numericAnswer <= max) {
-        try {
-          await r.check();
-          console.log(`✅ Selected radio range option: "${optionLabel}"`);
-          return;
-        } catch {
-          await r.evaluate(el => el.click());
-          console.log(`⚠️ Fallback click on range option: "${optionLabel}"`);
-          return;
-        }
-      }
-    }
-  }
-
-  if (radiosInGroup.length) {
-    try {
-      await radiosInGroup[0].waitForElementState('visible', { timeout: 2000 });
-      await radiosInGroup[0].waitForElementState('stable', { timeout: 2000 });
-      await radiosInGroup[0].scrollIntoViewIfNeeded();
-      await radiosInGroup[0].check();
-    } catch {
-      await radiosInGroup[0].evaluate(el => el.click());
-    }
-    console.log(`⚠️ Fallback selected first option for "${label}"`);
+  let toSelect;
+  if (yesRadio && radiosInGroup.length >= 2) {
+    toSelect = yesRadio;
   } else {
-    console.warn(`❌ Could not find matching radio for answer: "${answer}"`);
+    const midIndex = Math.floor(radiosInGroup.length / 2);
+    toSelect = radiosInGroup[midIndex];
   }
+
+  try {
+    await toSelect.waitForElementState('visible', { timeout: 2000 });
+    await toSelect.scrollIntoViewIfNeeded();
+    await toSelect.check();
+  } catch {
+    await toSelect.evaluate(el => el.click());
+  }
+
+  const optionLabel = await getRadioOptionLabel(toSelect);
+  console.log(`✅ Selected radio option: "${optionLabel}"`);
 }
 
 module.exports = {
