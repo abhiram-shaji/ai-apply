@@ -115,7 +115,8 @@ async function autoApply(jobsUrl) {
 
       const doneBtn = await waitForVisibleButton(
         page,
-        'button:has-text("Done"), button[aria-label="Done"]'
+        'button:has-text("Done"), button[aria-label="Done"]',
+        10000
       );
       const submit = await waitForVisibleButton(
         page,
