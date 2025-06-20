@@ -6,7 +6,24 @@ const {
 } = require('../utils/labelUtils');
 const { extractNumericValue } = require('../utils/numberUtils');
 
+require('dotenv').config();
+
 async function handleInput(input) {
+  const type = (await input.getAttribute('type')) || '';
+
+  if (type === 'file') {
+    const label = await getLabelFromInputNoAI(input);
+    const filePath = process.env.RESUME_PATH || 'resume.pdf';
+    console.log(`📎 Uploading file for "${label}" from ${filePath}`);
+    try {
+      await input.setInputFiles(filePath);
+      console.log(`✅ Uploaded file for "${label}"`);
+    } catch (err) {
+      console.warn(`❌ Failed to upload file for "${label}": ${err.message}`);
+    }
+    return;
+  }
+
   const value = await input.getAttribute('value');
   if (value) {
     console.log('➡️ Input already filled. Skipping.');
