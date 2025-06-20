@@ -40,26 +40,33 @@ async function autoApply(jobsUrl) {
       await fillForm(page);
       await delay(DELAY_MS);
 
-      const next = await page.$(
-        'button:has-text("Next"), button:has-text("Review"), button:has-text("Submit"), button:has-text("Done")'
-      );
+      const doneBtn = await page.$('button:has-text("Done")');
       const submit = await page.$('button:has-text("Submit application")');
+      const next = await page.$(
+        'button:has-text("Next"), button:has-text("Review"), button:has-text("Submit")'
+      );
 
-      if (next) {
-        console.log('➡️ Clicking Next...');
-        await next.click();
+      if (doneBtn) {
+        console.log('✅ Done button detected. Finishing application...');
+        await doneBtn.click();
         await page.waitForTimeout(1000);
+        logJob('applied', await job.innerText(), await page.url());
+        hasNext = false;
         await delay(DELAY_MS);
       } else if (submit) {
         console.log('📨 Submitting application...');
         await submit.click();
         await page.waitForTimeout(1000);
         logJob('applied', await job.innerText(), await page.url());
-        hasNext = false;
         console.log('✅ Application submitted and logged.');
         await delay(DELAY_MS);
+      } else if (next) {
+        console.log('➡️ Clicking Next...');
+        await next.click();
+        await page.waitForTimeout(1000);
+        await delay(DELAY_MS);
       } else {
-        console.log('⚠️ No Next or Submit button. Exiting form.');
+        console.log('⚠️ No Next, Submit, or Done button. Exiting form.');
         hasNext = false;
       }
     }
