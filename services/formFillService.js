@@ -42,7 +42,7 @@ async function fillForm(page) {
   const textareas = await filterVisible(await page.$$('form textarea'));
   const selects = await filterVisible(await page.$$('form select'));
   const checkboxes = await filterVisible(
-    await page.$$('input[type="checkbox"]')
+    await page.$$('form input[type="checkbox"]')
   );
   const radios = await filterVisible(await page.$$('form input[type="radio"]'));
   const inputs = await filterVisible(
