@@ -12,7 +12,7 @@ async function autoApply(jobsUrl) {
   });
 
   const page = await context.newPage();
-  const url = jobsUrl || 'https://www.linkedin.com/jobs/search-results/?distance=25&f_AL=true&geoId=101174742&keywords=web%20developer&origin=SEMANTIC_SEARCH_HISTORY';
+  const url = jobsUrl || 'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r604800&geoId=101174742&keywords=web%20developer&origin=SEMANTIC_SEARCH_HISTORY&refId=iZaMZL2W8d0bEQGdZrWGpA%3D%3D&trackingId=0659OnBi4qSBu%2BxqgcEM5w%3D%3D';
   await page.goto(url);
   await page.waitForSelector('li.scaffold-layout__list-item');
   await delay(DELAY_MS);
