@@ -13,6 +13,15 @@ async function processElements(elements, handler, label, page) {
   console.log(`🔍 Found ${elements.length} ${label}`);
   for (const element of elements) {
     try {
+      // Skip detached elements which may result from dynamic form updates
+      const attached = await element
+        .evaluate(el => el.isConnected)
+        .catch(() => false);
+      if (!attached) {
+        console.log(`⚠️ Skipping detached ${label.slice(0, -1)}.`);
+        continue;
+      }
+
       await handler(element, page);
       await delay(DELAY_MS);
     } catch (err) {
