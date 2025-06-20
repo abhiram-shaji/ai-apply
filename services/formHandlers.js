@@ -68,7 +68,7 @@ async function handleInput(input, page) {
     }
 
     try {
-      await page.keyboard.press('Escape');
+      await page.keyboard.press('Enter');
       await page.waitForTimeout(500);
     } catch (err) {
       console.log(`⚠️ Failed to close dropdown for "${label}": ${err.message}`);
