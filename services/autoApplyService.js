@@ -5,6 +5,38 @@ const { delay } = require('../utils/delay');
 require('dotenv').config();
 const DELAY_MS = parseInt(process.env.DELAY_MS || '1000', 10);
 
+async function handleStuckForm(page, job) {
+  console.log('❌ Handling stuck form...');
+  const closeBtn =
+    (await page.$('button[aria-label="Dismiss"], button[aria-label="Close"]')) ||
+    (await page.$('button[aria-label="Discard"], button[aria-label="Cancel"]'));
+  if (closeBtn) {
+    await closeBtn.click();
+    await page.waitForTimeout(1000);
+    const discard = await page.$('button:has-text("Discard")');
+    if (discard) {
+      await discard.click();
+      await page.waitForTimeout(1000);
+    }
+  }
+
+  const saveJob = await page.$('button.jobs-save-button, button:has-text("Save")');
+  if (saveJob) {
+    await saveJob.click();
+    console.log('💾 Job saved for later.');
+  }
+
+  const dismissJob = await job.$('button[aria-label^="Dismiss"]');
+  if (dismissJob) {
+    await dismissJob.click();
+    console.log('🗑️ Job dismissed after failure.');
+  }
+
+  logJob('skipped', await job.innerText(), await page.url());
+  await page.waitForTimeout(1000);
+  await delay(DELAY_MS);
+}
+
 
 async function autoApply(jobsUrl) {
   const context = await chromium.launchPersistentContext('./linkedin-session', {
@@ -62,11 +94,18 @@ async function autoApply(jobsUrl) {
         await delay(DELAY_MS);
       } else if (next) {
         console.log('➡️ Clicking Next...');
-        await next.click();
-        await page.waitForTimeout(1000);
-        await delay(DELAY_MS);
+        try {
+          await next.click();
+          await page.waitForTimeout(1000);
+          await delay(DELAY_MS);
+        } catch (err) {
+          console.error(`❌ Failed to click Next: ${err.message}`);
+          await handleStuckForm(page, job);
+          hasNext = false;
+        }
       } else {
         console.log('⚠️ No Next, Submit, or Done button. Exiting form.');
+        await handleStuckForm(page, job);
         hasNext = false;
       }
     }
