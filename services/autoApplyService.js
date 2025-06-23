@@ -79,7 +79,7 @@ async function autoApply(jobsUrl) {
   const page = await context.newPage();
   const url =
     jobsUrl ||
-    'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r604800&geoId=101174742&keywords=web%20developer&origin=SEMANTIC_SEARCH_HISTORY';
+    'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r604800&geoId=101174742&keywords=Web%20developer&origin=SEMANTIC_SEARCH_HISTORY';
   await page.goto(url);
   await page.waitForSelector('li.scaffold-layout__list-item');
   await delay(DELAY_MS);
@@ -97,10 +97,16 @@ async function autoApply(jobsUrl) {
     const jobText = ((await job.innerText()) || '').toLowerCase();
     if (
       jobText.includes('french') ||
+      jobText.includes('Senior') ||
+      jobText.includes('senior') ||
+      jobText.includes('Lead') ||
+      jobText.includes('lead') ||
       jobText.includes('fran\u00e7ais') ||
       jobText.includes('francais') ||
       jobText.includes('d\u00e9veloppeur') ||
-      jobText.includes('developpeur')
+      jobText.includes('D\u00e9veloppeur') ||
+      jobText.includes('developpeur') ||
+      jobText.includes('Developpeur')
     ) {
       console.log('\ud83c\uddeb\ud83c\uddf7 French job detected. Skipping...');
       const dismiss = await job.$('button[aria-label^="Dismiss"]');
