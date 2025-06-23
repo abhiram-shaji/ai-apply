@@ -79,7 +79,7 @@ async function autoApply(jobsUrl) {
   const page = await context.newPage();
   const url =
     jobsUrl ||
-    'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r604800&geoId=101174742&keywords=Web%20developer&origin=SEMANTIC_SEARCH_HISTORY';
+    'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r99999&geoId=101174742&keywords=software%20developer&origin=SEMANTIC_SEARCH_HISTORY';
   await page.goto(url);
   await page.waitForSelector('li.scaffold-layout__list-item');
   await delay(DELAY_MS);
@@ -98,6 +98,9 @@ async function autoApply(jobsUrl) {
     if (
       jobText.includes('french') ||
       jobText.includes('Senior') ||
+      jobText.includes('Sr') ||
+      jobText.includes('Sr.') ||
+      jobText.includes('Sr.Software') ||
       jobText.includes('senior') ||
       jobText.includes('Lead') ||
       jobText.includes('lead') ||
