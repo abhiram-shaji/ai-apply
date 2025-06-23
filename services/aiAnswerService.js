@@ -26,7 +26,8 @@ if (
   normalized.includes('ville')
 ) return 'Victoria, British Columbia, Canada';
 if (
-  normalized.includes('postal') || 
+  normalized.includes('postal') ||
+  normalized.includes('code pays') || 
   normalized.includes('code postal')
 ) return 'V8N 4A8';
 if (

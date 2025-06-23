@@ -79,7 +79,7 @@ async function autoApply(jobsUrl) {
   const page = await context.newPage();
   const url =
     jobsUrl ||
-    'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r99999&geoId=101174742&keywords=software%20developer&origin=SEMANTIC_SEARCH_HISTORY';
+    'https://www.linkedin.com/jobs/search-results/?distance=25&eBP=NON_CHARGEABLE_CHANNEL&f_AL=true&f_TPR=r500000&geoId=101174742&keywords=software%20developer&origin=SEMANTIC_SEARCH_HISTORY';
   await page.goto(url);
   await page.waitForSelector('li.scaffold-layout__list-item');
   await delay(DELAY_MS);
@@ -98,11 +98,20 @@ async function autoApply(jobsUrl) {
     if (
       jobText.includes('french') ||
       jobText.includes('principal') ||
+      jobText.includes('architect') ||
       jobText.includes('sr') ||
       jobText.includes('sr.') ||
       jobText.includes('sr.software') ||
       jobText.includes('senior') ||
       jobText.includes('lead') ||
+      jobText.includes('architecte') || // architect
+      jobText.includes('chef') || // chef de projet, chef d'équipe
+      jobText.includes('senior') || // commonly used in French job titles too
+      jobText.includes('responsable') || // often used for lead roles
+      jobText.includes('expert') || // commonly denotes seniority
+      jobText.includes('dirigeant') || // executive/leader
+      jobText.includes('gestionnaire') || // manager
+      jobText.includes('directeur') || // director or senior-level manager
       jobText.includes('fran\u00e7ais') ||
       jobText.includes('francais') ||
       jobText.includes('d\u00e9veloppeur') ||
