@@ -97,20 +97,16 @@ async function autoApply(jobsUrl) {
     const jobText = ((await job.innerText()) || '').toLowerCase();
     if (
       jobText.includes('french') ||
-      jobText.includes('Senior') ||
-      jobText.includes('Principal') ||
-      jobText.includes('Sr') ||
-      jobText.includes('Sr.') ||
-      jobText.includes('Sr.Software') ||
+      jobText.includes('principal') ||
+      jobText.includes('sr') ||
+      jobText.includes('sr.') ||
+      jobText.includes('sr.software') ||
       jobText.includes('senior') ||
-      jobText.includes('Lead') ||
       jobText.includes('lead') ||
       jobText.includes('fran\u00e7ais') ||
       jobText.includes('francais') ||
       jobText.includes('d\u00e9veloppeur') ||
-      jobText.includes('D\u00e9veloppeur') ||
-      jobText.includes('developpeur') ||
-      jobText.includes('Developpeur')
+      jobText.includes('developpeur')
     ) {
       console.log('\ud83c\uddeb\ud83c\uddf7 French job detected. Skipping...');
       const dismiss = await job.$('button[aria-label^="Dismiss"]');
