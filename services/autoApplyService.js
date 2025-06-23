@@ -98,6 +98,7 @@ async function autoApply(jobsUrl) {
     if (
       jobText.includes('french') ||
       jobText.includes('Senior') ||
+      jobText.includes('Principal') ||
       jobText.includes('Sr') ||
       jobText.includes('Sr.') ||
       jobText.includes('Sr.Software') ||
