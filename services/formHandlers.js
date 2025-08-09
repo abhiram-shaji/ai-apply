@@ -1,4 +1,4 @@
-const { getAnswer } = require('./aiAnswerService');
+const { getAnswer, notifyAI } = require('./aiAnswerService');
 const {
   getLabelFromInput,
   getLabelFromInputNoAI,
@@ -7,6 +7,20 @@ const {
 const { extractNumericValue } = require('../utils/numberUtils');
 
 require('dotenv').config();
+
+async function reportError(element, label) {
+  const errorText = await element.evaluate(el => {
+    const container = el.closest('div');
+    const errorEl = container?.querySelector(
+      '.artdeco-inline-feedback, .artdeco-form__error'
+    );
+    return errorEl && errorEl.textContent ? errorEl.textContent.trim() : '';
+  });
+  if (errorText) {
+    console.log(`Form error on "${label}": ${errorText}`);
+    await notifyAI(`Error on ${label}: ${errorText}`);
+  }
+}
 
 async function handleInput(input, page) {
   const type = (await input.getAttribute('type')) || '';
@@ -32,7 +46,13 @@ async function handleInput(input, page) {
 
   const label = await getLabelFromInput(input);
   console.log(`📝 Input label: "${label}"`);
-  const answer = await getAnswer(label);
+  let answer = await getAnswer(label);
+  if (label.toLowerCase().includes('phone')) {
+    if (!/^\d+$/.test(answer)) {
+      await notifyAI('Phone number must contain digits only');
+    }
+    answer = answer.replace(/\D/g, '');
+  }
   console.log(`🔤 Filling input with: "${answer}"`);
   const ariaAuto = await input.getAttribute('aria-autocomplete');
   const role = await input.getAttribute('role');
@@ -78,6 +98,7 @@ async function handleInput(input, page) {
 
     console.log(`✅ Filled input for "${label}"`);
   }
+  await reportError(input, label);
 }
   async function handleTextarea(textarea) {
     const label = await getLabelFromInput(textarea);
@@ -86,6 +107,7 @@ async function handleInput(input, page) {
     console.log(`🔤 Filling textarea with: "${answer}"`);
     await textarea.fill(answer);
     console.log(`✅ Filled textarea for "${label}"`);
+    await reportError(textarea, label);
   }
 
   async function handleSelect(select) {
@@ -97,6 +119,7 @@ async function handleInput(input, page) {
     try {
       await select.selectOption({ label: answer });
       console.log(`✅ Selected option for "${label}" using label match`);
+      await reportError(select, label);
       return;
     } catch (errLabel) {
       console.log(
@@ -108,6 +131,7 @@ async function handleInput(input, page) {
     try {
       await select.selectOption({ value: answer });
       console.log(`✅ Selected option for "${label}" using value match`);
+      await reportError(select, label);
       return;
     } catch (errValue) {
       console.log(
@@ -128,6 +152,7 @@ async function handleInput(input, page) {
         if (text.includes(normalizedAnswer) || val === normalizedAnswer) {
           await select.selectOption(val || { label: text });
           console.log(`✅ Selected option for "${label}" using yes/no match`);
+          await reportError(select, label);
           return;
         }
       }
@@ -148,6 +173,7 @@ async function handleInput(input, page) {
             console.log(
               `✅ Selected option for "${label}" matching numeric range`
             );
+            await reportError(select, label);
             return;
           }
         }
@@ -160,6 +186,7 @@ async function handleInput(input, page) {
             console.log(
               `✅ Selected option for "${label}" matching plus range`
             );
+            await reportError(select, label);
             return;
           }
         }
@@ -171,6 +198,7 @@ async function handleInput(input, page) {
           console.log(
             `✅ Selected option for "${label}" matching numeric value`
           );
+          await reportError(select, label);
           return;
         }
       }
@@ -185,6 +213,7 @@ async function handleInput(input, page) {
         break;
       }
     }
+    await reportError(select, label);
   }
 
   async function handleCheckbox(checkbox, page) {
@@ -202,6 +231,7 @@ async function handleInput(input, page) {
         try {
           await labelEl.waitForElementState('visible', { timeout: 3000 });
           await labelEl.click();
+          await reportError(checkbox, label);
           return;
         } catch {
           // fall back to other methods
@@ -215,6 +245,7 @@ async function handleInput(input, page) {
     } catch {
       await checkbox.evaluate(el => el.click());
     }
+    await reportError(checkbox, label);
   }
 
   async function handleRadio(radio, page) {
@@ -291,6 +322,7 @@ async function handleInput(input, page) {
 
     const optionLabel = await getRadioOptionLabel(toSelect);
     console.log(`✅ Selected radio option: "${optionLabel}"`);
+    await reportError(toSelect, label);
   }
 
   module.exports = {
