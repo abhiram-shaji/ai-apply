@@ -2,74 +2,11 @@ const { chromium } = require('playwright');
 const { fillForm } = require('./formFillService');
 const { logJob } = require('../utils/logger');
 const { delay } = require('../utils/delay');
+const { handleStuckForm } = require('./autoApply/handleStuckForm');
+const { clickAnyContinueButton } = require('./autoApply/clickAnyContinueButton');
+const { waitForVisibleButton } = require('./autoApply/waitForVisibleButton');
 require('dotenv').config();
 const DELAY_MS = parseInt(process.env.DELAY_MS || '1000', 10);
-
-async function handleStuckForm(page, job) {
-  console.log('❌ Handling stuck form...');
-  const closeBtn =
-    (await page.$('button[aria-label="Dismiss"], button[aria-label="Close"]')) ||
-    (await page.$('button[aria-label="Discard"], button[aria-label="Cancel"]'));
-  if (closeBtn) {
-    await closeBtn.click();
-    await page.waitForTimeout(1000);
-    const discard = await page.$('button:has-text("Discard")');
-    if (discard) {
-      await discard.click();
-      await page.waitForTimeout(1000);
-    }
-  }
-
-  const saveJob = await page.$('button.jobs-save-button, button:has-text("Save")');
-  if (saveJob) {
-    await saveJob.click();
-    console.log('💾 Job saved for later.');
-  }
-
-  const dismissJob = await job.$('button[aria-label^="Dismiss"]');
-  if (dismissJob) {
-    await dismissJob.click();
-    console.log('🗑️ Job dismissed after failure.');
-  }
-
-  logJob('skipped', await job.innerText(), await page.url());
-  await page.waitForTimeout(1000);
-  await delay(DELAY_MS);
-}
-
-async function clickAnyContinueButton(page) {
-  const buttons = await page.$$('button');
-  for (const btn of buttons) {
-    const aria = (await btn.getAttribute('aria-label')) || '';
-    const text = (await btn.innerText()) || '';
-    if (
-      aria.toLowerCase().includes('continue the apply process') ||
-      text.toLowerCase().includes('continue applying') ||
-      text.toLowerCase().includes('continue to apply') ||
-      text.toLowerCase().includes('continue anyway')
-    ) {
-      console.log(`➡️ Clicking continue button: ${aria || text}`);
-      await btn.click();
-      await page.waitForTimeout(1000);
-      await delay(DELAY_MS);
-      return true;
-    }
-  }
-  return false;
-}
-
-async function waitForVisibleButton(page, selector, timeout = 2000) {
-  try {
-    await page.waitForSelector(selector, { timeout });
-    const btn = await page.$(selector);
-    if (btn && (await btn.isVisible())) {
-      return btn;
-    }
-  } catch (err) {
-    // ignore timeout errors
-  }
-  return null;
-}
 
 async function autoApply(jobsUrl) {
   const context = await chromium.launchPersistentContext('./linkedin-session', {
@@ -200,7 +137,7 @@ async function autoApply(jobsUrl) {
         console.log('✅ Application submitted and logged.');
         hasNext = false;
         await delay(DELAY_MS);
-      } else if (await clickAnyContinueButton(page)) {
+      } else if (await clickAnyContinueButton(page, DELAY_MS)) {
         // Handled inside helper
       } else if (easyApplyAgain && !dialogOpen) {
         console.log('🔄 Detected Easy Apply button. Restarting application loop...');
@@ -213,12 +150,12 @@ async function autoApply(jobsUrl) {
           await delay(DELAY_MS);
         } catch (err) {
           console.error(`❌ Failed to click Next: ${err.message}`);
-          await handleStuckForm(page, job);
+          await handleStuckForm(page, job, DELAY_MS);
           hasNext = false;
         }
       } else {
         console.log('⚠️ No Next, Submit, or Done button. Exiting form.');
-        await handleStuckForm(page, job);
+        await handleStuckForm(page, job, DELAY_MS);
         hasNext = false;
       }
     }
