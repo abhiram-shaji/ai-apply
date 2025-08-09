@@ -60,4 +60,8 @@ if (
   return response.choices[0].message.content.trim();
 }
 
-module.exports = { getAnswer };
+async function notifyAI(message) {
+  console.log(`AI notification: ${message}`);
+}
+
+module.exports = { getAnswer, notifyAI };
